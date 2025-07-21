@@ -1,47 +1,45 @@
 # Contributing to Face Mask Detection
 
-Thanks for your interest in this repository. Our goal is to bring fast, open-source deep learning topics to all.
+Thanks for your interest in this repository! Our goal is to deliver a simple, fast, and effective deep learning-based face mask detection solution that’s easy to use and extend.
 
 ## Getting Started
 
-Face Mask Detection's [open issues are here](https://github.com/chandrikadeb7/Face-Mask-Detection/issues). 
-In time, we'll tag issues that would make a good first pull request for new contributors. 
-An easy way to get started helping the project is to *file an issue*. 
-You can do that on the Face-Mask-Detection issues page by clicking on the green button at the right. 
-Issues can include bugs to fix, features to add, or documentation that looks outdated. 
+We are working on marking issues that would make good first pull requests. For now, if you’d like to contribute, a great starting point is to **file an issue**.
 
-For some tips on contributing to open source, this [post is helpful](http://blog.smartbear.com/programming/14-ways-to-contribute-to-open-source-without-being-a-programming-genius-or-a-rock-star/).
+Issues can include:
+- Bugs to fix
+- Features to add
+- Outdated documentation
+- Suggestions for improvement
 
-## Contributions
+You can create a new issue by clicking on the green "New issue" button in the [Issues tab](https://github.com/tanishhhk/face_mask_detection/issues).  
 
-Face Mask Detection welcomes contributions from everyone.
+For tips on contributing to open source, [this post is helpful](https://smartbear.com/blog/developers/14-ways-to-contribute-to-open-source-without-being/).
 
-Contributions to Face Mask Detection should be made in the form of GitHub pull requests. Each pull request will
-be reviewed by a core contributor (someone with permission to land patches) and either landed in the
-main tree or given feedback for changes that would be required.
+## How to Contribute
+
+Contributions should be made via GitHub pull requests. Each PR will be reviewed and merged if approved. Contributions may involve:
+- Code improvements or features
+- Bug fixes
+- Documentation updates
+- UI improvements
+- Deployment or packaging changes
 
 ## Pull Request Checklist
 
-- Branch from the master branch and, if needed, rebase to the current master
-  branch before submitting your pull request. If it doesn't merge cleanly with
-  master you may be asked to rebase your changes.
+- Branch from the `main` branch. Rebase if needed before submitting.
+- Keep commits as focused and meaningful as possible.
+- Ensure each commit builds and runs independently.
+- Do not include unrelated submodule or dependency updates.
+- Mention reviewers using `@` if you need attention or feedback.
+- Add tests or screenshots (for UI work), where appropriate.
 
-- Commits should be as small as possible, while ensuring that each commit is
-  correct independently (i.e., each commit should compile and pass tests). 
+## Code of Conduct
 
-- Don't put submodule updates in your pull request unless they are to landed
-  commits.
+We follow the [Contributor Covenant](CODE_OF_CONDUCT.md) to ensure an inclusive and respectful environment.
 
-- If your patch is not getting reviewed or you need a specific person to review
-  it, you can @-reply a reviewer asking for a review in the pull request or a
-  comment.
+## License
 
-- Add tests relevant to the fixed bug or new feature.  
-
-## Conduct
-
-We follow the [Rust Code of Conduct](http://www.rust-lang.org/conduct.html).
-
-All code in this repository is under the MIT License
-
-Copyright (c) 2021 chandrikadeb7
+All code in this repository is licensed under the MIT License.  
+Copyright (c) 2025  
+Tanishk Jain  

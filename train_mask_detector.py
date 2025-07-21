@@ -1,3 +1,10 @@
+"""
+Face Mask Detection System
+Author: Tanishk Jain
+Description: Real-time face mask detection using OpenCV and TensorFlow.
+"""
+
+
 # USAGE
 # python train_mask_detector.py --dataset dataset
 

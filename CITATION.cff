@@ -1,18 +1,13 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
-
 cff-version: 1.2.0
-title: Face Mask Detection
+title: Real-Time Face Mask Detection
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
 authors:
-  - email: chandrikadeb7@gmail.com
-    family-names: Deb
-    given-names: Chandrika
-repository-code: >-
-  https://github.com/chandrikadeb7/Face-Mask-Detection
+  - name: Tanishk Jain
+    email: taniskjain3011@gmail.com
+repository-code: https://github.com/tanishhhk/face_mask_detection
 license: MIT
-version: v1.0.0
-date-released: '2022-02-27'
+version: v1.0.1
+date-released: '2025-07-22'
