@@ -1,105 +1,85 @@
 """
-Face Mask Detection System
+Face Mask Detection System - Training Script
 Author: Tanishk Jain
-Description: Real-time face mask detection using OpenCV and TensorFlow.
+Description: Train a face mask classifier using MobileNetV2 and save the model.
 """
 
-
-# USAGE
-# python train_mask_detector.py --dataset dataset
-
-# import the necessary packages
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Input
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.preprocessing.image import load_img
-from tensorflow.keras.utils import to_categorical
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from imutils import paths
-import matplotlib.pyplot as plt
+import os
 import numpy as np
 import argparse
-import os
+import matplotlib.pyplot as plt
+from datetime import datetime
+from imutils import paths
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics import classification_report
+import pickle
 
-# construct the argument parser and parse the arguments
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.layers import AveragePooling2D, Dropout, Flatten, Dense, Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+
+# Argument parser
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", required=True,
-	help="path to input dataset")
-ap.add_argument("-p", "--plot", type=str, default="plot.png",
-	help="path to output loss/accuracy plot")
-ap.add_argument("-m", "--model", type=str,
-	default="mask_detector.model",
-	help="path to output face mask detector model")
+ap.add_argument("-d", "--dataset", required=True, help="Path to input dataset")
+ap.add_argument("-m", "--model", type=str, default="mask_detector.model", help="Path to output model")
+ap.add_argument("-p", "--plot", type=str, default="plot", help="Base name for plot file (timestamp added automatically)")
+ap.add_argument("-e", "--epochs", type=int, default=20, help="Number of training epochs")
+ap.add_argument("-b", "--batch-size", type=int, default=32, help="Batch size")
+ap.add_argument("-l", "--learning-rate", type=float, default=1e-4, help="Initial learning rate")
 args = vars(ap.parse_args())
 
-# initialize the initial learning rate, number of epochs to train for,
-# and batch size
-INIT_LR = 1e-4
-EPOCHS = 20
-BS = 32
-
-# grab the list of images in our dataset directory, then initialize
-# the list of data (i.e., images) and class images
-print("[INFO] loading images...")
+# Load and preprocess dataset
+print("[INFO] Loading images...")
 imagePaths = list(paths.list_images(args["dataset"]))
 data = []
 labels = []
 
-# loop over the image paths
 for imagePath in imagePaths:
-	# extract the class label from the filename
-	label = imagePath.split(os.path.sep)[-2]
+    label = imagePath.split(os.path.sep)[-2]
+    image = load_img(imagePath, target_size=(224, 224))
+    image = img_to_array(image)
+    image = preprocess_input(image)
 
-	# load the input image (224x224) and preprocess it
-	image = load_img(imagePath, target_size=(224, 224))
-	image = img_to_array(image)
-	image = preprocess_input(image)
+    data.append(image)
+    labels.append(label)
 
-	# update the data and labels lists, respectively
-	data.append(image)
-	labels.append(label)
-
-# convert the data and labels to NumPy arrays
 data = np.array(data, dtype="float32")
 labels = np.array(labels)
 
-# perform one-hot encoding on the labels
+# Binarize and one-hot encode labels
 lb = LabelBinarizer()
 labels = lb.fit_transform(labels)
 labels = to_categorical(labels)
 
-# partition the data into training and testing splits using 75% of
-# the data for training and the remaining 25% for testing
+# Save label binarizer
+with open("label_binarizer.pickle", "wb") as f:
+    f.write(pickle.dumps(lb))
+
+# Split dataset
 (trainX, testX, trainY, testY) = train_test_split(data, labels,
-	test_size=0.20, stratify=labels, random_state=42)
+    test_size=0.20, stratify=labels, random_state=42)
 
-# construct the training image generator for data augmentation
+# Data augmentation
 aug = ImageDataGenerator(
-	rotation_range=20,
-	zoom_range=0.15,
-	width_shift_range=0.2,
-	height_shift_range=0.2,
-	shear_range=0.15,
-	horizontal_flip=True,
-	fill_mode="nearest")
+    rotation_range=20,
+    zoom_range=0.15,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.15,
+    horizontal_flip=True,
+    fill_mode="nearest")
 
-# load the MobileNetV2 network, ensuring the head FC layer sets are
-# left off
+# Load MobileNetV2 base model
 baseModel = MobileNetV2(weights="imagenet", include_top=False,
-	input_tensor=Input(shape=(224, 224, 3)))
+    input_tensor=Input(shape=(224, 224, 3)))
 
-# construct the head of the model that will be placed on top of the
-# the base model
+# Build head model
 headModel = baseModel.output
 headModel = AveragePooling2D(pool_size=(7, 7))(headModel)
 headModel = Flatten(name="flatten")(headModel)
@@ -107,56 +87,52 @@ headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
 headModel = Dense(2, activation="softmax")(headModel)
 
-# place the head FC model on top of the base model (this will become
-# the actual model we will train)
+# Final model
 model = Model(inputs=baseModel.input, outputs=headModel)
 
-# loop over all layers in the base model and freeze them so they will
-# *not* be updated during the first training process
+# Freeze base layers
 for layer in baseModel.layers:
-	layer.trainable = False
+    layer.trainable = False
 
-# compile our model
-print("[INFO] compiling model...")
-opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
-model.compile(loss="binary_crossentropy", optimizer=opt,
-	metrics=["accuracy"])
+# Compile model
+print("[INFO] Compiling model...")
+opt = Adam(learning_rate=args["learning_rate"])
+model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
-# train the head of the network
-print("[INFO] training head...")
+# Callbacks
+early_stop = EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True)
+checkpoint = ModelCheckpoint(args["model"], monitor="val_accuracy", save_best_only=True, verbose=1)
+
+# Train model
+print("[INFO] Training head...")
 H = model.fit(
-	aug.flow(trainX, trainY, batch_size=BS),
-	steps_per_epoch=len(trainX) // BS,
-	validation_data=(testX, testY),
-	validation_steps=len(testX) // BS,
-	epochs=EPOCHS)
+    aug.flow(trainX, trainY, batch_size=args["batch_size"]),
+    steps_per_epoch=len(trainX) // args["batch_size"],
+    validation_data=(testX, testY),
+    validation_steps=len(testX) // args["batch_size"],
+    epochs=args["epochs"],
+    callbacks=[early_stop, checkpoint],
+    verbose=1
+)
 
-# make predictions on the testing set
-print("[INFO] evaluating network...")
-predIdxs = model.predict(testX, batch_size=BS)
-
-# for each image in the testing set we need to find the index of the
-# label with corresponding largest predicted probability
+# Evaluate
+print("[INFO] Evaluating network...")
+predIdxs = model.predict(testX, batch_size=args["batch_size"])
 predIdxs = np.argmax(predIdxs, axis=1)
+print(classification_report(testY.argmax(axis=1), predIdxs, target_names=lb.classes_))
 
-# show a nicely formatted classification report
-print(classification_report(testY.argmax(axis=1), predIdxs,
-	target_names=lb.classes_))
-
-# serialize the model to disk
-print("[INFO] saving mask detector model...")
-model.save(args["model"], save_format="h5")
-
-# plot the training loss and accuracy
-N = EPOCHS
+# Save training plot
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+plot_file = f"{args['plot']}_{timestamp}.png"
 plt.style.use("ggplot")
 plt.figure()
-plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
-plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
-plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
-plt.plot(np.arange(0, N), H.history["val_accuracy"], label="val_acc")
+plt.plot(H.history["loss"], label="train_loss")
+plt.plot(H.history["val_loss"], label="val_loss")
+plt.plot(H.history["accuracy"], label="train_acc")
+plt.plot(H.history["val_accuracy"], label="val_acc")
 plt.title("Training Loss and Accuracy")
-plt.xlabel("Epoch #")
+plt.xlabel("Epoch")
 plt.ylabel("Loss/Accuracy")
 plt.legend(loc="lower left")
-plt.savefig(args["plot"])
+plt.savefig(plot_file)
+print(f"[INFO] Training plot saved as {plot_file}")
