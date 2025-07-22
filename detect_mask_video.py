@@ -136,7 +136,9 @@ while True:
     cv2.putText(frame, "Press 'q' to quit", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-    # show the output frame
+    # ✅ FIXED: Now these are indented properly inside the loop
+    cv2.namedWindow("Face Mask Detector", cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty("Face Mask Detector", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     cv2.imshow("Face Mask Detector", frame)
     key = cv2.waitKey(1)
 
